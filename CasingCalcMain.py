@@ -75,12 +75,6 @@ def calculateSoloMapsBurstLoadDF(section: Dict[str, Union[float, int]]) -> Dict[
     # Update section dictionary with calculated values
     section.update({'maps': maps, 'burst_load': burst_load, 'burst_df': burst_df})
     return section
-# def calculateSoloMapsBurstLoadDF(section):
-#     maps = section['mud_weight'] * section['tvd'] * 0.05194806
-#     burst_load = max((0.05194806 * (section['mud_weight'] - section['backup_mud']) * section['tvd']), min((section['frac_init_pressure'] - (0.05194806 * section['backup_mud'] * section['tvd'])),maps - section['int_gradient'] * (section['tvd'] - section['tvd']) - (0.05194806 * section['backup_mud'] * section['tvd'])))
-#     burst_df = float(section['burst_strength']) / float(burst_load) if float(burst_load) > 0 else float('inf')
-#     section.update({'maps': maps, 'burst_load': burst_load, 'burst_df': burst_df})
-#     return section
 
 def calculate_maps(sec1: Dict[str, float], sec2: Dict[str, float]) -> float:
     """Calculates Maximum Anticipated Pressure at Shoe (MAPS) between two adjacent
@@ -131,11 +125,6 @@ def calculate_maps(sec1: Dict[str, float], sec2: Dict[str, float]) -> float:
     maps = next_bhp - (sec2['tvd'] - sec1['tvd']) * sec2['int_gradient']
 
     return maps
-
-# def calculate_maps(sec1, sec2):
-#     next_bhp = sec2['mud_weight'] * sec2['tvd'] * 0.05194806
-#     maps = next_bhp - (sec2['tvd'] - sec1['tvd']) * sec2['int_gradient']
-#     return maps
 
 def calculate_burst_load(sec1: Dict[str, float], sec2: Dict[str, float], maps: float) -> float:
     """Calculates maximum burst load between casing sections considering differential
@@ -201,13 +190,6 @@ def calculate_burst_load(sec1: Dict[str, float], sec2: Dict[str, float], maps: f
     max_all = max(part1, min(minPart1, minPart2))
 
     return max_all
-# def calculate_burst_load(sec1, sec2, maps):
-#     part1 = 0.05194806 * (sec1['mud_weight'] - sec1['backup_mud']) * sec1['tvd']
-#     minPart1 = sec1['frac_init_pressure'] - (sec1['tvd'] - sec1['tvd']) * sec2['int_gradient'] - (0.05194806 * sec1['backup_mud'] * sec1['tvd'])
-#     minPart2 = maps - sec1['int_gradient'] * (sec1['tvd'] - sec1['tvd']) - (0.05194806 * sec1['backup_mud'] * sec1['tvd'])
-#     max_all = max(part1, min(minPart1, minPart2))
-#     return max_all
-
 
 class WellBoreExpanded(String):
     """A specialized wellbore class that extends the String class with additional depth parameters.
@@ -272,38 +254,7 @@ class WellBoreExpanded(String):
 
         # Initialize storage for wellbore relationships
         self.relationships: Dict[str, Any] = {}
-    # def __init__(self, name, top, bottom, max_md_depth, max_tvd_depth, tol=0.0, *args, method="bottom_up", **kwargs):
-    #     """
-    #     Extends the `String` class to include additional parameters: max_md_depth, max_tvd_depth, and tol (top of liner).
-    #
-    #     Parameters
-    #     ----------
-    #     name : str
-    #         The name of the collection.
-    #     top : float
-    #         The shallowest measured depth at the top of the collection of items in meters.
-    #     bottom : float
-    #         The deepest measured depth at the bottom of the collection of items in meters.
-    #     max_md_depth : float
-    #         The maximum measured depth for the wellbore.
-    #     max_tvd_depth : float
-    #         The maximum true vertical depth for the wellbore.
-    #     tol : float, optional
-    #         Top of liner depth, defaults to 0.0.
-    #     method : str, optional
-    #         Method to add sections ('top_down' or 'bottom_up'), by default "bottom_up".
-    #     """
-    #     super().__init__(name, top, bottom, method=method, *args, **kwargs)
-    #     # Assign additional parameters
-    #     self.max_md_depth = float(max_md_depth)
-    #     self.max_tvd_depth = float(max_tvd_depth)
-    #     self.tol = float(tol)  # Top of liner
-    #
-    #     # Validate the new parameters
-    #     self._validate_initial_parameters()
-    #
-    #     # Initialize relationships dictionary
-    #     self.relationships = {}
+
     def _validate_initial_parameters(self) -> NoReturn:
         """Validates the wellbore initialization parameters for type and value constraints.
 
@@ -341,7 +292,7 @@ class WellBoreExpanded(String):
         if not isinstance(self.tol, (int, float)) or self.tol < 0:
             raise ValueError("tol (top of liner) must be a non-negative number.")
 
-    def add_section_with_properties(self, **kwargs: Dict[str, Any]) -> NoReturn:
+    def add_section_with_properties(self, **kwargs) -> NoReturn:
         """Adds a new wellbore section with comprehensive properties and validates required parameters.
 
         This method extends the base section addition functionality by requiring specific
@@ -1360,91 +1311,71 @@ class CasingDataCalc:
         # Calculate design factor as ratio of strength to load
         return self.tension_strength / self.tension_buoyed
 
-def main():
+
+def main() -> None:
+    """Initialize and process wellbore casing design calculations.
+
+    Loads wellbore, hole, casing, and string parameters from SQLite database,
+    constructs a WellBoreExpanded object, and adds sections with their respective
+    properties for analysis.
+
+    Database Tables Required:
+        - wb_info: Contains wellbore information and casing depths
+        - hole_parameters: Hole-specific data for each casing section
+        - casing: Casing specifications and dimensions
+        - string_parameters: Mechanical properties of casing strings
+
+    Notes:
+        - Uses pandas DataFrame operations for data manipulation
+        - Suppresses chained assignment warnings for performance
+        - Converts string representations of lists to Python objects
+        - Assumes consistent units across all input parameters
+
+    Example:
+        >>> main()
+        # Processes wellbore data and outputs section calculations
+    """
+    # Configure pandas display and warning settings
     pd.set_option('display.max_columns', None)  # Show all columns when displaying DataFrames
     pd.options.mode.chained_assignment = None  # Suppress chained assignment warnings
 
+    # Database connection and data retrieval
     conn = sqlite3.connect('sample_casing.db')
     wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
     hole_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
     casing_df = pd.read_sql('SELECT * FROM casing', conn)
     string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
 
+    # Convert string representation of casing depths to Python objects
     wb_df['casing_depths'] = wb_df['casing_depths'].apply(lambda row: ast.literal_eval(row))
 
+    # Initialize wellbore object with basic parameters
     wellbore = WellBoreExpanded(
-        name='Wellbore (Planned)', top=wb_df['conductor_casing_bottom'].iloc[0], bottom=wb_df['max_depth_md'].iloc[0],
-        method='top_down', tol=wb_df['top_of_liner'].iloc[0],
-        max_md_depth=wb_df['max_depth_md'].iloc[0], max_tvd_depth=wb_df['max_depth_tvd'].iloc[0])
-    # wellbore = WellBoreExpanded(
-    #     name='Wellbore (Planned)', top=conductor_casing_bottom, bottom=max_depth_md, method='top_down', tol=top_of_liner,
-    #     max_md_depth=max_depth_md, max_tvd_depth=max_depth_tvd)
+        name='Wellbore (Planned)',
+        top=wb_df['conductor_casing_bottom'].iloc[0],
+        bottom=wb_df['max_depth_md'].iloc[0],
+        method='top_down',
+        tol=wb_df['top_of_liner'].iloc[0],
+        max_md_depth=wb_df['max_depth_md'].iloc[0],
+        max_tvd_depth=wb_df['max_depth_tvd'].iloc[0]
+    )
 
-    # casing_data = [['Surf', '12.25', '9.625', 2481, '36.0', 'J-55', 'LTC', 'CEMENT', '286', '2.6', '12.0', '166', '1.13', '16.0', '11.0', 'CEMENT'],
-    # ['I1', '8.75', '7.0', 9346, '29.0', 'P-110', 'BTC', 'CEMENT', '504', '2.1', '12.0', '156', '1.16', '15.8', '11.0', 'CEMENT'],
-    # ['Prod', '6.125', '5.0', 20512, '18.0', 'P-110', 'BTC', 'CEMENT', '613', '1.38', '14.5', '0', '0.0', '0.0', '15.0', 9246, 'CEMENT']]
-    # data_labels = ['label', 'hole_size','csg_size', 'set_depth', 'csg_weight', 'csg_grade', 'csg_collar', 'lead_qty', 'lead_yield', 'tail_qty', 'tail_yield']
-    # casing_data = [['surface', 12.25, 9.625, 2481, 36.0, 'J-55', 'LTC', 286, 2.6, 166, 1.13],
-    #                 ['intermediate', 8.75, 7.0, 9346, 29.0, 'P-110', 'BTC', 504, 2.1, 156, 1.16],
-    #                 ['production', 6.125, 5.0, 20512, 18.0, 'P-110', 'BTC', 613, 1.38, 0, 0.0]]
-
-    # casing_df = pd.DataFrame(data = casing_data, columns = data_labels)
-    #
-    # conn = sqlite3.connect('sample_casing.db')
-    #
-    # conn.execute('DROP TABLE IF EXISTS casing')
-    # casing_df.to_sql('casing', conn, index=False)
-    # #
-
-    # labels = ['label', 'buoyed', 'mw', 'tvd', 'hole_washout', 'internal_gradient', 'backup_mud', 'internal_mud']
-    # hole_parameters = [['surface', 'y', 11.0, 2481.0, 10, 0.12, 0.0, 0.0],
-    #                     ['intermediate', 'y', 11.0, 9308.15, 4, 0.22, 0.0, 0.0],
-    #                     ['production', 'y', 15.0, 10247.499, 4, 0.22, 0.0, 0.0]]
-    # hole_df = pd.DataFrame(data = hole_parameters, columns = labels)
-    # conn.execute('DROP TABLE IF EXISTS hole_parameters')
-    # hole_df.to_sql('hole_parameters', conn, index=False)
-
-    # wb_labels = ['conductor_casing_bottom', 'casing_depths', 'top_of_liner', 'max_depth_md', 'max_depth_tvd', 'frac_gradient']
-    # wb_info = [[100, '[2450, 9350, 9246, 20512]', 9246, 20512, 9208.15, 1]]
-    # wb_df = pd.DataFrame(data = wb_info, columns = wb_labels)
-    # conn.execute('DROP TABLE IF EXISTS wb_info')
-    # wb_df.to_sql('wb_info', conn, index=False)
-
-    # df_string_data = [['surface', 9.625, 36.0, 'J-55', '2020', '3520', 'LTC', '453', '564', '0.352', '8.921', '8.765', None],
-    #  ['intermediate', 7.0, 29.0, 'P-110', '8530', '11220', 'BTC', '955', '929', '0.408', '6.184', '6.059', None],
-    #  ['production', 5.0, 18.0, 'P-110', '13470', '13620', 'BTC', '606', '580', '0.362', '4.276', '4.151', None]]
-    # string_labels = ['label', 'CasingDiameter', 'NominalWeight', 'Grade', 'Collapse',
-    #        'InternalYieldPressure', 'JointType', 'JointStrength', 'BodyYield',
-    #        'Wall', 'ID', 'DriftDiameterAPI', 'DriftDiameterSD']
-    # string_labels = [i.lower() for i in string_labels]
-    # string_df = pd.DataFrame(data = df_string_data, columns = string_labels)
-    # conn.execute('DROP TABLE IF EXISTS string_parameters')
-    # string_df.to_sql('string_parameters', conn, index=False)
-
-    # print(string_df)
-    # print(wb_df)
-    # print(casing_df)
-    # print(hole_df)
-    # df = pd.read_sql('SELECT * FROM DX', conn)
-    # df = df.drop_duplicates()
-    # conn.execute('DROP TABLE IF EXISTS DX')
-    # df.to_sql('DX', conn, index=False)
-    #
-    # df = pd.read_sql('SELECT * FROM PlatData', conn)
-    # df = df.drop_duplicates()
-    # conn.execute('DROP TABLE IF EXISTS PlatData')
-    # df.to_sql('PlatData', conn, index=False)
-    print(string_df.columns)
-    print(casing_df.columns)
-    print(hole_df.columns)
+    # Process each casing section
     for idx, row in casing_df.iterrows():
         current_casing = row['label']
+        # Filter parameters for current casing section
         current_hole_parameters = hole_df[hole_df['label'] == current_casing]
         current_string_parameters = string_df[string_df['label'] == current_casing]
+
+        # Calculate cement volume from lead and tail sections
+        cement_volume = (float(row['lead_qty']) * float(row['lead_yield'])) + \
+                        (float(row['tail_qty']) * float(row['tail_yield']))
+
+        # Add section with comprehensive properties
         wellbore.add_section_with_properties(
             id=idx,
             casing_type=current_casing,
-            coeff_friction_sliding=0.39,
+            coeff_friction_sliding=0.39,  # Constant friction coefficient
             frac_gradient=float(wb_df['frac_gradient'].iloc[0]),
             od=float(row['csg_size']),
             bottom=float(row['set_depth']),
@@ -1452,8 +1383,7 @@ def main():
             grade=row['csg_grade'],
             connection=row['csg_collar'],
             hole_size=float(row['hole_size']),
-            cement_cu_ft=(float(row['lead_qty']) * float(row['lead_yield'])) + (
-                    float(row['tail_qty']) * float(row['tail_yield'])),
+            cement_cu_ft=cement_volume,
             tvd=float(current_hole_parameters['tvd'].iloc[0]),
             washout=float(current_hole_parameters['hole_washout'].iloc[0]),
             int_gradient=float(current_hole_parameters['internal_gradient'].iloc[0]),
@@ -1466,8 +1396,63 @@ def main():
             collapse_pressure=float(current_string_parameters.loc[current_string_parameters.index[-1], 'collapse']),
             tension_strength=float(current_string_parameters.loc[current_string_parameters.index[-1], 'jointstrength'])
         )
+
+    # Calculate final parameters for all sections
     wellbore.calcParametersContained()
+
+
 if __name__ == '__main__':
     main()
+
+
+# def main():
+#     pd.set_option('display.max_columns', None)  # Show all columns when displaying DataFrames
+#     pd.options.mode.chained_assignment = None  # Suppress chained assignment warnings
+#
+#     conn = sqlite3.connect('sample_casing.db')
+#     wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
+#     hole_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
+#     casing_df = pd.read_sql('SELECT * FROM casing', conn)
+#     string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
+#
+#     wb_df['casing_depths'] = wb_df['casing_depths'].apply(lambda row: ast.literal_eval(row))
+#
+#     wellbore = WellBoreExpanded(
+#         name='Wellbore (Planned)', top=wb_df['conductor_casing_bottom'].iloc[0], bottom=wb_df['max_depth_md'].iloc[0],
+#         method='top_down', tol=wb_df['top_of_liner'].iloc[0],
+#         max_md_depth=wb_df['max_depth_md'].iloc[0], max_tvd_depth=wb_df['max_depth_tvd'].iloc[0])
+#
+#     for idx, row in casing_df.iterrows():
+#         current_casing = row['label']
+#         current_hole_parameters = hole_df[hole_df['label'] == current_casing]
+#         current_string_parameters = string_df[string_df['label'] == current_casing]
+#         wellbore.add_section_with_properties(
+#             id=idx,
+#             casing_type=current_casing,
+#             coeff_friction_sliding=0.39,
+#             frac_gradient=float(wb_df['frac_gradient'].iloc[0]),
+#             od=float(row['csg_size']),
+#             bottom=float(row['set_depth']),
+#             weight=float(row['csg_weight']),
+#             grade=row['csg_grade'],
+#             connection=row['csg_collar'],
+#             hole_size=float(row['hole_size']),
+#             cement_cu_ft=(float(row['lead_qty']) * float(row['lead_yield'])) + (
+#                     float(row['tail_qty']) * float(row['tail_yield'])),
+#             tvd=float(current_hole_parameters['tvd'].iloc[0]),
+#             washout=float(current_hole_parameters['hole_washout'].iloc[0]),
+#             int_gradient=float(current_hole_parameters['internal_gradient'].iloc[0]),
+#             mud_weight=float(current_hole_parameters['mw'].iloc[0]),
+#             backup_mud=float(current_hole_parameters['backup_mud'].iloc[0]),
+#             body_yield=float(current_string_parameters.loc[current_string_parameters.index[-1], 'bodyyield']),
+#             burst_strength=float(current_string_parameters.loc[current_string_parameters.index[-1], 'internalyieldpressure']),
+#             wall_thickness=float(current_string_parameters.loc[current_string_parameters.index[-1], 'wall']),
+#             csg_internal_diameter=float(current_string_parameters.loc[current_string_parameters.index[-1], 'id']),
+#             collapse_pressure=float(current_string_parameters.loc[current_string_parameters.index[-1], 'collapse']),
+#             tension_strength=float(current_string_parameters.loc[current_string_parameters.index[-1], 'jointstrength'])
+#         )
+#     wellbore.calcParametersContained()
+# if __name__ == '__main__':
+#     main()
 
 
