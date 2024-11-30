@@ -1,123 +1,137 @@
-# Wellbore Casing Design Analysis Tool
+```markdown
+# Casing Design Analysis Tool with Welleng Integration
 
 ## Overview
-A Python-based tool for analyzing and designing wellbore casing configurations. This tool processes wellbore data, casing specifications, and hole parameters to perform comprehensive casing design calculations.
+A specialized Python-based tool that extends the welleng module capabilities for advanced casing design analysis in oil and gas well planning. This tool provides comprehensive calculations for burst loads, tension factors, and maximum anticipated pressures while integrating with welleng's wellbore trajectory and engineering calculations.
 
-## Features
-- Wellbore configuration analysis
-- Casing section property calculations
-- Multi-section casing design
-- Mechanical property verification
-- Cement volume calculations
-
-## Requirements
+## Dependencies
+```plaintext
+Primary Dependencies:
 - Python 3.7+
-- pandas
-- sqlite3
+- numpy==1.26.4
+- pandas==2.2.3
+- welleng==0.8.5
+- scipy==1.14.1
 
-## Database Schema
-The tool requires a SQLite database (`sample_casing.db`) with the following tables:
+Visualization Dependencies:
+- matplotlib==3.9.2
+- vedo==2024.5.2
+- vtk==9.3.1
 
-### wb_info
-- conductor_casing_bottom
-- casing_depths
-- top_of_liner
-- max_depth_md
-- max_depth_tvd
-- frac_gradient
-
-### hole_parameters
-- label
-- mw (mud weight)
-- tvd
-- hole_washout
-- internal_gradient
-- backup_mud
-
-### casing
-- label
-- hole_size
-- csg_size
-- set_depth
-- csg_weight
-- csg_grade
-- csg_collar
-- lead_qty
-- lead_yield
-- tail_qty
-- tail_yield
-
-### string_parameters
-- label
-- collapse
-- internalyieldpressure
-- jointstrength
-- bodyyield
-- wall
-- id
-
-## Usage
-
-```python
-from wellbore_analyzer import WellBoreExpanded
-
-# Initialize wellbore
-wellbore = WellBoreExpanded(
-    name='Wellbore (Planned)',
-    top=conductor_casing_bottom,
-    bottom=max_depth_md,
-    method='top_down',
-    tol=top_of_liner,
-    max_md_depth=max_depth_md,
-    max_tvd_depth=max_depth_tvd
-)
-
-# Add casing sections
-wellbore.add_section_with_properties(sections=[...])  # List of section dictionaries
-
-# Calculate parameters
-wellbore.calcParametersContained()
+Additional Requirements:
+- certifi==2024.8.30
+- contourpy==1.3.1
+- pyproj==3.7.0
+- PyYAML==6.0.2
+- typing_extensions==4.12.2
 ```
 
-## Section Properties
-Each casing section requires the following properties:
-- id: Section identifier
-- casing_type: Type of casing
-- coeff_friction_sliding: Coefficient of friction (default 0.39)
-- frac_gradient: Formation fracture gradient
-- od: Outside diameter
-- bottom: Setting depth
-- weight: Casing weight
-- grade: Casing grade
-- connection: Connection type
-- hole_size: Hole diameter
-- cement_cu_ft: Cement volume
-- tvd: True vertical depth
-- washout: Hole washout factor
-- int_gradient: Internal gradient
-- mud_weight: Mud weight
-- backup_mud: Backup mud weight
-- body_yield: Body yield strength
-- burst_strength: Burst strength
-- wall_thickness: Wall thickness
-- csg_internal_diameter: Internal diameter
-- collapse_pressure: Collapse pressure
-- tension_strength: Tension strength
+## Core Functionality
+### Well Design Analysis
+- Integration with welleng trajectory calculations
+- Casing seat depth optimization
+- Formation pressure analysis
+- Multi-string design verification
 
-## Data Processing
-The tool handles:
-- Database connections and data retrieval
-- String to list conversion for casing depths
-- Parameter validation
-- Section-wise calculations
-- Mechanical property verification
+### Pressure Calculations
+- MAPS (Maximum Anticipated Surface Pressure)
+- Burst load analysis
+- Internal/external pressure differentials
+- Formation fracture pressure integration
 
-## Error Handling
-The system includes comprehensive error handling for:
-- Database connection issues
-- Data validation
-- Parameter processing
-- Section calculations
+### Safety Factor Analysis
+- Burst design factors
+- Tension load calculations
+- Combined loading scenarios
+- Section-to-section integrity verification
 
-## Note
-This tool is designed for professional wellbore engineering applications. All measurements should be in consistent units according to industry standards.
+## Data Management
+The tool utilizes SQL database integration for:
+- Well parameters storage
+- Casing specifications
+- String design data
+- Formation properties
+
+## Usage Guidelines
+### Database Integration
+```python
+# Initialize database connection
+wb_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
+casing_df = pd.read_sql('SELECT * FROM casing', conn)
+string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
+```
+
+### Wellbore Configuration
+```python
+wellbore = WellBoreExpanded(
+    name='Wellbore (Planned)',
+    top=wb_df['conductor_casing_bottom'].iloc[0],
+    bottom=wb_df['max_depth_md'].iloc[0],
+    method='top_down',
+    tol=wb_df['top_of_liner'].iloc[0],
+    max_md_depth=wb_df['max_depth_md'].iloc[0],
+    max_tvd_depth=wb_df['max_depth_tvd'].iloc[0]
+)
+```
+
+## Best Practices
+- Avoid global state modifications
+- Use module-level constants for configuration
+- Implement proper encapsulation
+- Document design decisions
+- Follow PEP 8 style guidelines
+- Use type hints for better code maintainability
+
+## Performance Considerations
+- Optimized numerical calculations
+- Efficient database queries
+- Memory management for large datasets
+- Vectorized operations where possible
+
+## Future Development
+- Enhanced temperature effects modeling
+- Machine learning integration for design optimization
+- Real-time monitoring capabilities
+- Advanced visualization features
+- Cloud deployment options
+
+## Installation
+```bash
+pip install -r requirements.txt
+```
+
+## Project Structure
+```
+casing_design/
+├── core/
+│   ├── calculations.py
+│   ├── pressure.py
+│   └── safety_factors.py
+├── database/
+│   ├── models.py
+│   └── queries.py
+├── utils/
+│   ├── conversions.py
+│   └── validators.py
+├── visualization/
+│   └── plotters.py
+└── tests/
+    └── test_calculations.py
+```
+
+## Contributing
+- Follow PEP 8 style guidelines
+- Include comprehensive documentation
+- Add unit tests for new features
+- Maintain backward compatibility
+- Update requirements.txt as needed
+
+## Support
+For technical support and feature requests:
+- Submit issues through the project tracker
+- Consult the technical documentation
+- Contact the development team
+
+## License
+[Appropriate License Information]
+```
