@@ -80,7 +80,7 @@ Calculations performed:
 9. Air weight tension
 10. Buoyed tension
 11. Tension design factor
-12. 
+ 
 ## Usage Guidelines
 ### Database Integration
 ```python
@@ -105,6 +105,52 @@ conn.close()
     )
 ```
 
+### Casing By Casing Loop
+```python
+    for idx, row in used_df.iterrows():
+        # Calculate cement volume from lead and tail sections
+        cement_volume = (float(row['lead_qty']) * float(row['lead_yield'])) + \
+                        (float(row['tail_qty']) * float(row['tail_yield']))
+        # Add section with comprehensive properties
+        wellbore.add_section_with_properties(
+            id=idx,
+            casing_type=row['label'],
+            od=float(row['csg_size']),
+            bottom=float(row['set_depth']),
+            weight=float(row['csg_weight']),
+            grade=row['csg_grade'],
+            connection=row['csg_collar'],
+            hole_size=float(row['hole_size']),
+            cement_cu_ft=cement_volume,
+            tvd=float(row['tvd']),
+            washout=float(row['hole_washout']),
+            int_gradient=float(row['internal_gradient']),
+            mud_weight=float(row['mw']),
+            backup_mud=float(row['backup_mud']),
+            body_yield=float(row['bodyyield']),
+            burst_strength=float(row['internalyieldpressure']),
+            wall_thickness=float(row['wall']),
+            csg_internal_diameter=float(row['id']),
+            collapse_pressure=float(row['collapse']),
+            tension_strength=float(row['jointstrength'])
+        )
+```
+
+### Reading Results
+Parameters include:
+'top', 'id', 'casing_type', 'od', 'bottom', 'weight', 'grade', 'connection', 'hole_size', 'cement_cu_ft', 'tvd',
+'washout', 'int_gradient', 'mud_weight', 'backup_mud', 'body_yield', 'burst_strength', 'wall_thickness',
+'csg_internal_diameter', 'collapse_pressure', 'tension_strength', 'cement_height', 'toc', 'masp', 'collapse_strength',
+'collapse_load', 'collapse_df', 'neutral_point', 'tension_df', 'tension_air', 'tension_buoyed', 'frac_init_pressure',
+'maps', 'burst_load', 'burst_df'
+
+```python
+# returns names of all casing used
+casing_used = wellbore.sections.keys()
+# returns data for casing by casing string
+# EXAMPLE (if your row['label'] in the previous secton was 'surface')
+surface_data = wellbore.sections['surface']
+```
 ## Installation
 ```
 pip install -r requirements.txt
