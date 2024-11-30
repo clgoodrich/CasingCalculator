@@ -4,7 +4,7 @@ import pandas as pd
 from welleng.architecture import String
 import ast
 from typing import Optional, Dict, Any, Union, Literal, NoReturn, List
-
+import tabulate
 
 def calculateSoloMapsBurstLoadDF(section: Dict[str, Union[float, int]]) -> Dict[str, Union[float, int]]:
     """Calculates Maximum Anticipated Surface Pressure (MAPS), burst load, and burst design
@@ -1321,10 +1321,34 @@ def main() -> None:
 
     Database Tables Required:
         - wb_info: Contains wellbore information and casing depths
-        - hole_parameters: Hole-specific data for each casing section
-        - casing: Casing specifications and dimensions
-        - string_parameters: Mechanical properties of casing strings
+        EXAMPLE Dataframe:
+        |    |   conductor_casing_bottom |   top_of_liner |   max_depth_md |   max_depth_tvd |   frac_gradient |
+        |---:|--------------------------:|---------------:|---------------:|----------------:|----------------:|
+        |  0 |                       100 |           9300 |          20500 |         9300.00 |               1 |
 
+        - hole_parameters: Hole-specific data for each casing section
+        EXAMPLE Dataframe:
+        |    | label        |   mw |      tvd |   hole_washout |   internal_gradient |   backup_mud |
+        |---:|:-------------|-----:|---------:|---------------:|--------------------:|-------------:|
+        |  0 | surface      |   11 |  2500    |             10 |                0.12 |            0 |
+        |  1 | intermediate |   11 |  9300.00 |              4 |                0.22 |            0 |
+        |  2 | production   |   15 | 10250.0  |              4 |                0.22 |            0 |
+
+        - casing: Casing specifications and dimensions
+        EXAMPLE Dataframe:
+        |    | label        |   hole_size |   csg_size |   set_depth |   csg_weight | csg_grade   | csg_collar   |   lead_qty |   lead_yield |   tail_qty |   tail_yield |
+        |---:|:-------------|------------:|-----------:|------------:|-------------:|:------------|:-------------|-----------:|-------------:|-----------:|-------------:|
+        |  0 | surface      |      12.25  |      9.625 |        2500 |           36 | J-55        | LTC          |        286 |         2.6  |        166 |         1.13 |
+        |  1 | intermediate |       8.75  |      7     |        9500 |           29 | P-110       | BTC          |        504 |         2.1  |        156 |         1.16 |
+        |  2 | production   |       6.125 |      5     |       20500 |           18 | P-110       | BTC          |        613 |         1.38 |          0 |         0    |
+
+        - string_parameters: Mechanical properties of casing strings
+        EXAMPLE Dataframe:
+        |    | label        |   nominalweight | grade   |   collapse |   internalyieldpressure | jointtype   |   jointstrength |   bodyyield |   wall |    id |
+        |---:|:-------------|----------------:|:--------|-----------:|------------------------:|:------------|----------------:|------------:|-------:|------:|
+        |  0 | surface      |              36 | J-55    |       2020 |                    3520 | LTC         |             453 |         564 |  0.352 | 8.921 |
+        |  1 | intermediate |              29 | P-110   |       8530 |                   11220 | BTC         |             955 |         929 |  0.408 | 6.184 |
+        |  2 | production   |              18 | P-110   |      13470 |                   13620 | BTC         |             606 |         580 |  0.362 | 4.276 |
     Notes:
         - Uses pandas DataFrame operations for data manipulation
         - Suppresses chained assignment warnings for performance
@@ -1345,10 +1369,30 @@ def main() -> None:
     hole_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
     casing_df = pd.read_sql('SELECT * FROM casing', conn)
     string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
+    wb_df = wb_df.drop(columns=['casing_depths'])
+    hole_df = hole_df.drop(columns=['buoyed', 'internal_mud'])
+    string_df = string_df.drop(columns=['driftdiameterapi', 'driftdiametersd', 'casingdiameter'])
 
+    # print(wb_df.columns)
+    print(wb_df.to_markdown())
+    print("\n\n\n\n\n\n")
+    # print(hole_df.columns)
+
+    print(hole_df.to_markdown())
+    print("\n\n\n\n\n\n")
+    # print(casing_df.columns)
+
+    print(casing_df.to_markdown())
+    print("\n\n\n\n\n\n")
+    # print(string_df.to_dict('records'))
+    # print(string_df.columns)
+
+    print(string_df.to_markdown())
+    print("\n\n\n\n\n\n")
+    print(foo)
     # Convert string representation of casing depths to Python objects
-    wb_df['casing_depths'] = wb_df['casing_depths'].apply(lambda row: ast.literal_eval(row))
-
+    # wb_df['casing_depths'] = wb_df['casing_depths'].apply(lambda row: ast.literal_eval(row))
+    # wb_df['casing_depths'] = 'foo'
     # Initialize wellbore object with basic parameters
     wellbore = WellBoreExpanded(
         name='Wellbore (Planned)',
@@ -1403,56 +1447,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-
-
-# def main():
-#     pd.set_option('display.max_columns', None)  # Show all columns when displaying DataFrames
-#     pd.options.mode.chained_assignment = None  # Suppress chained assignment warnings
-#
-#     conn = sqlite3.connect('sample_casing.db')
-#     wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
-#     hole_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
-#     casing_df = pd.read_sql('SELECT * FROM casing', conn)
-#     string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
-#
-#     wb_df['casing_depths'] = wb_df['casing_depths'].apply(lambda row: ast.literal_eval(row))
-#
-#     wellbore = WellBoreExpanded(
-#         name='Wellbore (Planned)', top=wb_df['conductor_casing_bottom'].iloc[0], bottom=wb_df['max_depth_md'].iloc[0],
-#         method='top_down', tol=wb_df['top_of_liner'].iloc[0],
-#         max_md_depth=wb_df['max_depth_md'].iloc[0], max_tvd_depth=wb_df['max_depth_tvd'].iloc[0])
-#
-#     for idx, row in casing_df.iterrows():
-#         current_casing = row['label']
-#         current_hole_parameters = hole_df[hole_df['label'] == current_casing]
-#         current_string_parameters = string_df[string_df['label'] == current_casing]
-#         wellbore.add_section_with_properties(
-#             id=idx,
-#             casing_type=current_casing,
-#             coeff_friction_sliding=0.39,
-#             frac_gradient=float(wb_df['frac_gradient'].iloc[0]),
-#             od=float(row['csg_size']),
-#             bottom=float(row['set_depth']),
-#             weight=float(row['csg_weight']),
-#             grade=row['csg_grade'],
-#             connection=row['csg_collar'],
-#             hole_size=float(row['hole_size']),
-#             cement_cu_ft=(float(row['lead_qty']) * float(row['lead_yield'])) + (
-#                     float(row['tail_qty']) * float(row['tail_yield'])),
-#             tvd=float(current_hole_parameters['tvd'].iloc[0]),
-#             washout=float(current_hole_parameters['hole_washout'].iloc[0]),
-#             int_gradient=float(current_hole_parameters['internal_gradient'].iloc[0]),
-#             mud_weight=float(current_hole_parameters['mw'].iloc[0]),
-#             backup_mud=float(current_hole_parameters['backup_mud'].iloc[0]),
-#             body_yield=float(current_string_parameters.loc[current_string_parameters.index[-1], 'bodyyield']),
-#             burst_strength=float(current_string_parameters.loc[current_string_parameters.index[-1], 'internalyieldpressure']),
-#             wall_thickness=float(current_string_parameters.loc[current_string_parameters.index[-1], 'wall']),
-#             csg_internal_diameter=float(current_string_parameters.loc[current_string_parameters.index[-1], 'id']),
-#             collapse_pressure=float(current_string_parameters.loc[current_string_parameters.index[-1], 'collapse']),
-#             tension_strength=float(current_string_parameters.loc[current_string_parameters.index[-1], 'jointstrength'])
-#         )
-#     wellbore.calcParametersContained()
-# if __name__ == '__main__':
-#     main()
-
 
