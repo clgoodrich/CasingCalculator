@@ -2,9 +2,7 @@ import math
 import sqlite3
 import pandas as pd
 from welleng.architecture import String
-import ast
 from typing import Optional, Dict, Any, Union, Literal, NoReturn, List
-import tabulate
 
 def calculateSoloMapsBurstLoadDF(section: Dict[str, Union[float, int]]) -> Dict[str, Union[float, int]]:
     """Calculates Maximum Anticipated Surface Pressure (MAPS), burst load, and burst design
@@ -1368,9 +1366,8 @@ def main() -> None:
     wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
     query = f"""select * from database"""
     used_df = pd.read_sql(query, conn)
-    used_df = used_df.loc[:, ~used_df.columns.duplicated()]
     conn.close()
-    
+
     # Initialize wellbore object with basic parameters
     wellbore = WellBoreExpanded(
         name='Wellbore (Planned)',
@@ -1413,8 +1410,7 @@ def main() -> None:
 
     # Calculate final parameters for all sections
     wellbore.calcParametersContained()
-    print(wellbore.sections.keys())
-    print(wellbore.sections['surface']['tension_df'])
+
 
 
 if __name__ == '__main__':
