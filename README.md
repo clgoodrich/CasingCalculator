@@ -3,6 +3,19 @@
 
 ## Overview
 A specialized Python-based tool that extends the welleng module capabilities for advanced casing design analysis in oil and gas well planning. This tool provides comprehensive calculations for burst loads, tension factors, and maximum anticipated pressures while integrating with welleng's wellbore trajectory and engineering calculations.
+Original WellEng Author: <jonnycorcutt@gmail.com>
+Original Repository: https://github.com/jonnymaserati/welleng
+
+Modified by: Colton Goodrich <coltonlg@gmail.com>
+
+Significant modifications:
+- Changed from generic String class to specialized WellBore implementation
+- Added wellbore-specific parameter validation and type checking
+- Introduced casing mechanical properties and calculations
+- Modified section management to use structured List[Dict] input
+- Added cement volume and geometric property calculations
+- Incorporated industry-specific validation rules
+- Maintained original method='bottom_up'/'top_down' architecture
 
 ## Dependencies
 ```
