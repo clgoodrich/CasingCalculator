@@ -1,11 +1,11 @@
-```markdown
+
 # Casing Design Analysis Tool with Welleng Integration
 
 ## Overview
 A specialized Python-based tool that extends the welleng module capabilities for advanced casing design analysis in oil and gas well planning. This tool provides comprehensive calculations for burst loads, tension factors, and maximum anticipated pressures while integrating with welleng's wellbore trajectory and engineering calculations.
 
 ## Dependencies
-```plaintext
+```
 Primary Dependencies:
 - Python 3.7+
 - numpy==1.26.4
@@ -96,27 +96,8 @@ wellbore = WellBoreExpanded(
 - Cloud deployment options
 
 ## Installation
-```bash
+```
 pip install -r requirements.txt
-```
-
-## Project Structure
-```
-casing_design/
-├── core/
-│   ├── calculations.py
-│   ├── pressure.py
-│   └── safety_factors.py
-├── database/
-│   ├── models.py
-│   └── queries.py
-├── utils/
-│   ├── conversions.py
-│   └── validators.py
-├── visualization/
-│   └── plotters.py
-└── tests/
-    └── test_calculations.py
 ```
 
 ## Contributing
@@ -131,7 +112,3 @@ For technical support and feature requests:
 - Submit issues through the project tracker
 - Consult the technical documentation
 - Contact the development team
-
-## License
-[Appropriate License Information]
-```
