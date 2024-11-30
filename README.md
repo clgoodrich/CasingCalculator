@@ -67,63 +67,45 @@ The tool utilizes SQL database integration for:
 - String design data
 - Formation properties
 
+## Calculations Performed
+Calculations performed:
+1. Formation fracture initial pressure
+2. Annular cement volume
+3. Cement column height
+4. Top of cement (TOC)
+5. Maximum allowable surface pressure (MASP)
+6. Collapse loading conditions
+7. Collapse design factor
+8. Neutral point location
+9. Air weight tension
+10. Buoyed tension
+11. Tension design factor
+12. 
 ## Usage Guidelines
 ### Database Integration
 ```python
 # Initialize database connection
-wb_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
-casing_df = pd.read_sql('SELECT * FROM casing', conn)
-string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
+conn = sqlite3.connect('sample_casing.db')
+wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
+used_df = pd.read_sql('SELECT * FROM database', conn)
+conn.close()
 ```
 
 ### Wellbore Configuration
 ```python
-wellbore = WellBoreExpanded(
-    name='Wellbore (Planned)',
-    top=wb_df['conductor_casing_bottom'].iloc[0],
-    bottom=wb_df['max_depth_md'].iloc[0],
-    method='top_down',
-    tol=wb_df['top_of_liner'].iloc[0],
-    max_md_depth=wb_df['max_depth_md'].iloc[0],
-    max_tvd_depth=wb_df['max_depth_tvd'].iloc[0]
-)
+    wellbore = WellBoreExpanded(
+        name='Wellbore (Planned)',
+        top=100,
+        bottom=20500,
+        method='top_down',
+        tol=9250,
+        max_md_depth=20500,
+        max_tvd_depth=9200,
+        frac_gradient=1.0,
+    )
 ```
-
-## Best Practices
-- Avoid global state modifications
-- Use module-level constants for configuration
-- Implement proper encapsulation
-- Document design decisions
-- Follow PEP 8 style guidelines
-- Use type hints for better code maintainability
-
-## Performance Considerations
-- Optimized numerical calculations
-- Efficient database queries
-- Memory management for large datasets
-- Vectorized operations where possible
-
-## Future Development
-- Enhanced temperature effects modeling
-- Machine learning integration for design optimization
-- Real-time monitoring capabilities
-- Advanced visualization features
-- Cloud deployment options
 
 ## Installation
 ```
 pip install -r requirements.txt
 ```
-
-## Contributing
-- Follow PEP 8 style guidelines
-- Include comprehensive documentation
-- Add unit tests for new features
-- Maintain backward compatibility
-- Update requirements.txt as needed
-
-## Support
-For technical support and feature requests:
-- Submit issues through the project tracker
-- Consult the technical documentation
-- Contact the development team
