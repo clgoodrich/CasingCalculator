@@ -1368,8 +1368,9 @@ def main() -> None:
     wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
     query = f"""select * from database"""
     used_df = pd.read_sql(query, conn)
+    used_df = used_df.loc[:, ~used_df.columns.duplicated()]
     conn.close()
-
+    
     # Initialize wellbore object with basic parameters
     wellbore = WellBoreExpanded(
         name='Wellbore (Planned)',
@@ -1403,8 +1404,7 @@ def main() -> None:
             mud_weight=float(row['mw']),
             backup_mud=float(row['backup_mud']),
             body_yield=float(row['bodyyield']),
-            burst_strength=float(
-                row['internalyieldpressure']),
+            burst_strength=float(row['internalyieldpressure']),
             wall_thickness=float(row['wall']),
             csg_internal_diameter=float(row['id']),
             collapse_pressure=float(row['collapse']),
