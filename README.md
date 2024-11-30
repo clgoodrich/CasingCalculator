@@ -71,22 +71,24 @@ The tool utilizes SQL database integration for:
 ### Database Integration
 ```python
 # Initialize database connection
-wb_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
-casing_df = pd.read_sql('SELECT * FROM casing', conn)
-string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
+conn = sqlite3.connect('sample_casing.db')
+wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
+used_df = pd.read_sql('SELECT * FROM database', conn)
+conn.close()
 ```
 
 ### Wellbore Configuration
 ```python
-wellbore = WellBoreExpanded(
-    name='Wellbore (Planned)',
-    top=wb_df['conductor_casing_bottom'].iloc[0],
-    bottom=wb_df['max_depth_md'].iloc[0],
-    method='top_down',
-    tol=wb_df['top_of_liner'].iloc[0],
-    max_md_depth=wb_df['max_depth_md'].iloc[0],
-    max_tvd_depth=wb_df['max_depth_tvd'].iloc[0]
-)
+    wellbore = WellBoreExpanded(
+        name='Wellbore (Planned)',
+        top=100,
+        bottom=20500,
+        method='top_down',
+        tol=9250,
+        max_md_depth=20500,
+        max_tvd_depth=9200,
+        frac_gradient=1.0,
+    )
 ```
 
 ## Best Practices
