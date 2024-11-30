@@ -1366,12 +1366,8 @@ def main() -> None:
     # Database connection and data retrieval
     conn = sqlite3.connect('sample_casing.db')
     wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
-    query = f"""select *
-                from hole_parameters hp
-                join casing c on c.label = hp.label
-                join string_parameters sp on sp.label = hp.label"""
+    query = f"""select * from database"""
     used_df = pd.read_sql(query, conn)
-    used_df = used_df.loc[:, ~used_df.columns.duplicated()]
     conn.close()
 
     # Initialize wellbore object with basic parameters
