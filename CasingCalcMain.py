@@ -237,6 +237,7 @@ class WellBoreExpanded(String):
             max_md_depth: float,
             max_tvd_depth: float,
             tol: float = 0.0,
+            frac_gradient: float = 1.0,
             *args: Any,
             method: Literal["bottom_up", "top_down"] = "bottom_up",
             **kwargs: Any
@@ -248,7 +249,7 @@ class WellBoreExpanded(String):
         self.max_md_depth: float = float(max_md_depth)
         self.max_tvd_depth: float = float(max_tvd_depth)
         self.tol: float = float(tol)  # Top of liner depth
-
+        self.frac_gradient = float(frac_gradient)
         # Validate all depth parameters for consistency
         self._validate_initial_parameters()
 
@@ -343,9 +344,9 @@ class WellBoreExpanded(String):
         # Define required parameters for section creation
         required_params: list[str] = [
             'id', 'tvd', 'od', 'bottom', 'casing_type', 'weight', 'grade',
-            'connection', 'coeff_friction_sliding', 'hole_size', 'washout',
+            'connection', 'hole_size', 'washout',
             'int_gradient', 'mud_weight', 'backup_mud', 'cement_cu_ft',
-            'frac_gradient', 'body_yield', 'burst_strength',
+            'body_yield', 'burst_strength',
             'wall_thickness', 'csg_internal_diameter', 'collapse_pressure', 'tension_strength'
         ]
 
@@ -558,7 +559,8 @@ class WellBoreExpanded(String):
         univ_params: Dict[str, float] = {
             'max_md_depth': self.max_md_depth,
             'max_tvd_depth': self.max_tvd_depth,
-            'tol': self.tol
+            'tol': self.tol,
+            'frac_gradient': self.frac_gradient
         }
         variables: List[str] = []  # Track casing types for variable creation
 
@@ -738,7 +740,7 @@ class CasingDataCalc:
         self.results: Dict[str, Any] = {}
 
         # Store casing properties
-        self.frac_gradient: float = casing['frac_gradient']
+        # self.frac_gradient: float = casing['frac_gradient']
         self.tvd: float = casing['tvd']
         self.washout: float = casing['washout']
         self.int_gradient: float = casing['int_gradient']
@@ -763,6 +765,7 @@ class CasingDataCalc:
 
         # Store universal parameters
         self.tol: float = univ_params['tol']
+        self.frac_gradient: float = univ_params['frac_gradient']
         self.max_md_depth: float = univ_params['max_md_depth']
         self.max_tvd_depth: float = univ_params['max_tvd_depth']
 
@@ -1326,7 +1329,8 @@ def main() -> None:
         |---:|--------------------------:|---------------:|---------------:|----------------:|----------------:|
         |  0 |                       100 |           9300 |          20500 |         9300.00 |               1 |
 
-        - hole_parameters: Hole-specific data for each casing section
+        - casing_parameters: Hole-specific data for each casing section, casing specifications and dimensions and
+        mechanical properties of casing strings
         EXAMPLE Dataframe:
         |    | label        |   mw |      tvd |   hole_washout |   internal_gradient |   backup_mud |
         |---:|:-------------|-----:|---------:|---------------:|--------------------:|-------------:|
@@ -1334,21 +1338,17 @@ def main() -> None:
         |  1 | intermediate |   11 |  9300.00 |              4 |                0.22 |            0 |
         |  2 | production   |   15 | 10250.0  |              4 |                0.22 |            0 |
 
-        - casing: Casing specifications and dimensions
-        EXAMPLE Dataframe:
-        |    | label        |   hole_size |   csg_size |   set_depth |   csg_weight | csg_grade   | csg_collar   |   lead_qty |   lead_yield |   tail_qty |   tail_yield |
-        |---:|:-------------|------------:|-----------:|------------:|-------------:|:------------|:-------------|-----------:|-------------:|-----------:|-------------:|
-        |  0 | surface      |      12.25  |      9.625 |        2500 |           36 | J-55        | LTC          |        286 |         2.6  |        166 |         1.13 |
-        |  1 | intermediate |       8.75  |      7     |        9500 |           29 | P-110       | BTC          |        504 |         2.1  |        156 |         1.16 |
-        |  2 | production   |       6.125 |      5     |       20500 |           18 | P-110       | BTC          |        613 |         1.38 |          0 |         0    |
+        |   hole_size |   csg_size |   set_depth |   csg_weight | csg_grade   | csg_collar   |   lead_qty |   lead_yield |   tail_qty |   tail_yield |
+        |------------:|-----------:|------------:|-------------:|:------------|:-------------|-----------:|-------------:|-----------:|-------------:|
+        |      12.25  |      9.625 |        2500 |           36 | J-55        | LTC          |        286 |         2.6  |        166 |         1.13 |
+        |       8.75  |      7     |        9500 |           29 | P-110       | BTC          |        504 |         2.1  |        156 |         1.16 |
+        |       6.125 |      5     |       20500 |           18 | P-110       | BTC          |        613 |         1.38 |          0 |         0    |
 
-        - string_parameters: Mechanical properties of casing strings
-        EXAMPLE Dataframe:
-        |    | label        |   nominalweight | grade   |   collapse |   internalyieldpressure | jointtype   |   jointstrength |   bodyyield |   wall |    id |
-        |---:|:-------------|----------------:|:--------|-----------:|------------------------:|:------------|----------------:|------------:|-------:|------:|
-        |  0 | surface      |              36 | J-55    |       2020 |                    3520 | LTC         |             453 |         564 |  0.352 | 8.921 |
-        |  1 | intermediate |              29 | P-110   |       8530 |                   11220 | BTC         |             955 |         929 |  0.408 | 6.184 |
-        |  2 | production   |              18 | P-110   |      13470 |                   13620 | BTC         |             606 |         580 |  0.362 | 4.276 |
+        |   nominalweight | grade   |   collapse |   internalyieldpressure | jointtype   |   jointstrength |   bodyyield |   wall |    id |
+        |----------------:|:--------|-----------:|------------------------:|:------------|----------------:|------------:|-------:|------:|
+        |              36 | J-55    |       2020 |                    3520 | LTC         |             453 |         564 |  0.352 | 8.921 |
+        |              29 | P-110   |       8530 |                   11220 | BTC         |             955 |         929 |  0.408 | 6.184 |
+        |              18 | P-110   |      13470 |                   13620 | BTC         |             606 |         580 |  0.362 | 4.276 |
     Notes:
         - Uses pandas DataFrame operations for data manipulation
         - Suppresses chained assignment warnings for performance
@@ -1366,33 +1366,14 @@ def main() -> None:
     # Database connection and data retrieval
     conn = sqlite3.connect('sample_casing.db')
     wb_df = pd.read_sql('SELECT * FROM wb_info', conn)
-    hole_df = pd.read_sql('SELECT * FROM hole_parameters', conn)
-    casing_df = pd.read_sql('SELECT * FROM casing', conn)
-    string_df = pd.read_sql('SELECT * FROM string_parameters', conn)
-    wb_df = wb_df.drop(columns=['casing_depths'])
-    hole_df = hole_df.drop(columns=['buoyed', 'internal_mud'])
-    string_df = string_df.drop(columns=['driftdiameterapi', 'driftdiametersd', 'casingdiameter'])
+    query = f"""select *
+                from hole_parameters hp
+                join casing c on c.label = hp.label
+                join string_parameters sp on sp.label = hp.label"""
+    used_df = pd.read_sql(query, conn)
+    used_df = used_df.loc[:, ~used_df.columns.duplicated()]
+    conn.close()
 
-    # print(wb_df.columns)
-    print(wb_df.to_markdown())
-    print("\n\n\n\n\n\n")
-    # print(hole_df.columns)
-
-    print(hole_df.to_markdown())
-    print("\n\n\n\n\n\n")
-    # print(casing_df.columns)
-
-    print(casing_df.to_markdown())
-    print("\n\n\n\n\n\n")
-    # print(string_df.to_dict('records'))
-    # print(string_df.columns)
-
-    print(string_df.to_markdown())
-    print("\n\n\n\n\n\n")
-    print(foo)
-    # Convert string representation of casing depths to Python objects
-    # wb_df['casing_depths'] = wb_df['casing_depths'].apply(lambda row: ast.literal_eval(row))
-    # wb_df['casing_depths'] = 'foo'
     # Initialize wellbore object with basic parameters
     wellbore = WellBoreExpanded(
         name='Wellbore (Planned)',
@@ -1401,26 +1382,18 @@ def main() -> None:
         method='top_down',
         tol=wb_df['top_of_liner'].iloc[0],
         max_md_depth=wb_df['max_depth_md'].iloc[0],
-        max_tvd_depth=wb_df['max_depth_tvd'].iloc[0]
+        max_tvd_depth=wb_df['max_depth_tvd'].iloc[0],
+        frac_gradient=float(wb_df['frac_gradient'].iloc[0]),
     )
-
     # Process each casing section
-    for idx, row in casing_df.iterrows():
-        current_casing = row['label']
-        # Filter parameters for current casing section
-        current_hole_parameters = hole_df[hole_df['label'] == current_casing]
-        current_string_parameters = string_df[string_df['label'] == current_casing]
-
+    for idx, row in used_df.iterrows():
         # Calculate cement volume from lead and tail sections
         cement_volume = (float(row['lead_qty']) * float(row['lead_yield'])) + \
                         (float(row['tail_qty']) * float(row['tail_yield']))
-
         # Add section with comprehensive properties
         wellbore.add_section_with_properties(
             id=idx,
-            casing_type=current_casing,
-            coeff_friction_sliding=0.39,  # Constant friction coefficient
-            frac_gradient=float(wb_df['frac_gradient'].iloc[0]),
+            casing_type=row['label'],
             od=float(row['csg_size']),
             bottom=float(row['set_depth']),
             weight=float(row['csg_weight']),
@@ -1428,21 +1401,24 @@ def main() -> None:
             connection=row['csg_collar'],
             hole_size=float(row['hole_size']),
             cement_cu_ft=cement_volume,
-            tvd=float(current_hole_parameters['tvd'].iloc[0]),
-            washout=float(current_hole_parameters['hole_washout'].iloc[0]),
-            int_gradient=float(current_hole_parameters['internal_gradient'].iloc[0]),
-            mud_weight=float(current_hole_parameters['mw'].iloc[0]),
-            backup_mud=float(current_hole_parameters['backup_mud'].iloc[0]),
-            body_yield=float(current_string_parameters.loc[current_string_parameters.index[-1], 'bodyyield']),
-            burst_strength=float(current_string_parameters.loc[current_string_parameters.index[-1], 'internalyieldpressure']),
-            wall_thickness=float(current_string_parameters.loc[current_string_parameters.index[-1], 'wall']),
-            csg_internal_diameter=float(current_string_parameters.loc[current_string_parameters.index[-1], 'id']),
-            collapse_pressure=float(current_string_parameters.loc[current_string_parameters.index[-1], 'collapse']),
-            tension_strength=float(current_string_parameters.loc[current_string_parameters.index[-1], 'jointstrength'])
+            tvd=float(row['tvd']),
+            washout=float(row['hole_washout']),
+            int_gradient=float(row['internal_gradient']),
+            mud_weight=float(row['mw']),
+            backup_mud=float(row['backup_mud']),
+            body_yield=float(row['bodyyield']),
+            burst_strength=float(
+                row['internalyieldpressure']),
+            wall_thickness=float(row['wall']),
+            csg_internal_diameter=float(row['id']),
+            collapse_pressure=float(row['collapse']),
+            tension_strength=float(row['jointstrength'])
         )
 
     # Calculate final parameters for all sections
     wellbore.calcParametersContained()
+    print(wellbore.sections.keys())
+    print(wellbore.sections['surface']['tension_df'])
 
 
 if __name__ == '__main__':
